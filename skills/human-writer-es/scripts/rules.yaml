@@ -1,0 +1,287 @@
+# ES notes:
+# - Apostrophes/curly chars: the analyzer wraps each suspect-vocabulary phrase
+#   with re.escape + \b...\b. Spanish rarely uses apostrophes, so the FR
+#   straight-vs-curly caveat is mostly moot here. For ai_constructions, where a
+#   curly quote could appear, we keep a ['’] class only where needed.
+# - Suspect vocabulary covers Tier 1 + Tier 2 (~180 entries). Tier 3 is
+#   documented in references/tells-stylistic-es.md but excluded here:
+#   false-positive risk on common Spanish words is too high for a per-word matcher.
+# - The "—" em-dash threshold mirrors the master FR/EN value (1.0). Spanish has a
+#   legitimate native raya (dialogue), but the AI tell is the Anglo spaced dash in
+#   expository prose; target 0, hard cap ≤ 1 per 1000 words.
+# - inverted_marks_missing_max is the NEW ES typography threshold: the maximum
+#   number of `?`/`!`-terminated sentences allowed to LACK their opening `¿`/`¡`
+#   before the detector flags. Calibrated so clean native prose (which always
+#   pairs them) does not fire.
+# - burstiness_min and comma_density_max are copied verbatim from the master
+#   thresholds block; they are currently UNREAD by analyze.py (vestigial). Keep
+#   them; do not treat their presence as a bug.
+es:
+  suspect_vocabulary:
+    # --- Tier 1: high signal ---
+    # Connectors and meta-comments
+    - "cabe destacar"
+    - "cabe señalar"
+    - "cabe mencionar"
+    - "cabe resaltar"
+    - "es importante destacar"
+    - "es importante señalar"
+    - "es importante mencionar"
+    - "es importante tener en cuenta"
+    - "conviene recordar"
+    - "conviene señalar"
+    - "conviene precisar"
+    - "hay que destacar"
+    - "hay que señalar"
+    - "hay que tener en cuenta"
+    - "sin lugar a dudas"
+    - "no cabe duda"
+    - "no hay duda"
+    - "como bien sabemos"
+    - "como todos sabemos"
+    - "como es bien sabido"
+    - "en este sentido"
+    - "a este respecto"
+    - "dicho esto"
+    - "por otro lado"
+    - "por otra parte"
+    # Adverbs and phrases of certainty
+    - "indudablemente"
+    - "innegablemente"
+    - "incuestionablemente"
+    - "sin duda alguna"
+    - "evidentemente"
+    - "obviamente"
+    - "ciertamente"
+    - "verdaderamente"
+    # Spatial-temporal abstractions
+    - "en el mundo actual"
+    - "en el mundo de hoy"
+    - "en la era digital"
+    - "en la era de la ia"
+    - "en la era de la información"
+    - "en la actualidad"
+    - "hoy en día"
+    - "en un mundo donde"
+    - "en una época donde"
+    - "en pleno siglo xxi"
+    - "a lo largo y ancho de"
+    - "en el corazón de"
+    - "en el seno de"
+    - "más allá de"
+    # Comparators and frames
+    - "a la luz de"
+    - "en aras de"
+    - "de cara a"
+    - "a la hora de"
+    # Metaphorical inflators
+    - "verdadero"
+    - "auténtico"
+    - "todo un"
+    - "imprescindible"
+    - "indispensable"
+    - "referente"
+    - "emblemático"
+    - "icónico"
+    - "revolucionario"
+    - "transformador"
+    - "transformadora"
+    - "robusto"
+    - "robusta"
+    - "de vanguardia"
+    - "puntero"
+    - "de última generación"
+    - "de primer nivel"
+    - "de clase mundial"
+    # Structural metaphors
+    - "piedra angular"
+    - "pilar fundamental"
+    - "columna vertebral"
+    - "eje central"
+    # Verbs and verbal phrases
+    - "aprovechar al máximo"
+    - "potenciar"
+    - "impulsar"
+    - "empoderar"
+    - "desplegar"
+    - "forjar"
+    - "erigir"
+    - "instaurar"
+    - "encarnar"
+    - "plasmar"
+    - "cristalizar"
+    - "catalizar"
+    - "abrazar"
+    - "sumérgete en"
+    - "adéntrate en"
+    - "sumergirse en"
+    - "libera el potencial"
+    - "desbloquea"
+
+    # --- Tier 2: medium signal ---
+    # Verbs
+    - "explorar"
+    - "exploremos"
+    - "descubrir"
+    - "desvelar"
+    - "revelar"
+    - "transformar"
+    - "revolucionar"
+    - "optimizar"
+    - "agilizar"
+    - "simplificar"
+    - "fomentar"
+    - "favorecer"
+    - "propiciar"
+    - "garantizar"
+    - "maximizar"
+    - "minimizar"
+    - "acompañar"
+    - "abordar"
+    - "gestionar"
+    - "implementar"
+    - "monitorear"
+    - "monitorizar"
+    - "aprovechar"
+    # Adjectives of importance / intensity
+    - "clave"
+    - "fundamental"
+    - "esencial"
+    - "crucial"
+    - "primordial"
+    - "vital"
+    - "destacado"
+    - "notable"
+    - "relevante"
+    - "significativo"
+    - "extraordinario"
+    - "excepcional"
+    - "impresionante"
+    - "asombroso"
+    - "espectacular"
+    - "único"
+    - "innovador"
+    - "innovadora"
+    - "poderoso"
+    - "potente"
+    - "elegante"
+    - "sofisticado"
+    - "intuitivo"
+    # Abstract nouns
+    - "sinergia"
+    - "sinergias"
+    - "ecosistema"
+    - "universo"
+    - "paradigma"
+    - "experiencia"
+    - "solución"
+    - "viaje"
+    - "trayecto"
+    - "recorrido"
+    - "abanico"
+    - "sinfín"
+    - "multitud de"
+    - "una gran variedad de"
+    # Connectors (overuse)
+    - "además"
+    - "asimismo"
+    - "igualmente"
+    - "por consiguiente"
+    - "por ende"
+    - "por lo tanto"
+    - "no obstante"
+    - "sin embargo"
+    - "de hecho"
+  ai_constructions:
+    # --- High severity (banned outright) ---
+    - pattern: "No se trata solo de"
+      severity: high
+    - pattern: "No solo se trata de"
+      severity: high
+    - pattern: "Sumérgete en"
+      severity: high
+    - pattern: "Adéntrate en"
+      severity: high
+    - pattern: "Exploremos juntos"
+      severity: high
+    - pattern: "En el mundo actual"
+      severity: high
+    - pattern: "En la era digital"
+      severity: high
+    - pattern: "En la era de la IA"
+      severity: high
+    - pattern: "Imagina un mundo donde"
+      severity: high
+    - pattern: "¿Y si te dijera que"
+      severity: high
+    - pattern: "Sin lugar a dudas"
+      severity: high
+    - pattern: "Cabe destacar"
+      severity: high
+    - pattern: "Cabe señalar"
+      severity: high
+    # --- Medium severity (rare-only) ---
+    - pattern: "Ya seas .*? o"
+      severity: medium
+    - pattern: "Tanto si eres .*? como"
+      severity: medium
+    - pattern: "Prepárate, porque"
+      severity: medium
+    - pattern: "Vamos a desglosarlo"
+      severity: medium
+    - pattern: "Déjame explicártelo"
+      severity: medium
+    - pattern: "Vamos al grano"
+      severity: medium
+    - pattern: "En pocas palabras,"
+      severity: medium
+    - pattern: "Quizás te preguntes"
+      severity: medium
+    - pattern: "Tal vez te estés preguntando"
+      severity: medium
+    - pattern: "El veredicto es claro"
+      severity: medium
+    - pattern: "La conclusión es evidente"
+      severity: medium
+    - pattern: "En conclusión,"
+      severity: medium
+    - pattern: "Para concluir,"
+      severity: medium
+    - pattern: "En síntesis,"
+      severity: medium
+    # --- Low severity (flag only at high frequency) ---
+    - pattern: "En definitiva,"
+      severity: low
+    - pattern: "En última instancia,"
+      severity: low
+    - pattern: "En resumen,"
+      severity: low
+    - pattern: "En resumidas cuentas,"
+      severity: low
+  thresholds:
+    # ES: the Anglo spaced em-dash "—" reads as an AI tell in expository prose
+    # (native Spanish reserves the raya for dialogue). Target 0; convert to
+    # comma/colon/period/parentheses. En-dash "–" in ranges and the minus sign
+    # are fine; only the wide "—" misused as an emphasis dash is the tell.
+    em_dash_per_1000_words: 1.0
+    burstiness_min: 8.0
+    sentence_stdev_min: 8.0
+    lexical_diversity_min: 0.45
+    comma_density_max: 2.0
+    bullet_parallelism_max: 0.80
+    # NEW ES typography detector: max number of `?`/`!`-terminated sentences
+    # allowed to LACK their opening `¿`/`¡` before flagging. 0 = strict (any
+    # omission flags). Clean native prose always pairs them, so it never fires.
+    inverted_marks_missing_max: 0
+
+content_type_weights:
+  marketing:     {statistical: 1.0, stylistic: 1.0, structural: 1.0}
+  short-comms:   {statistical: 0.6, stylistic: 1.2, structural: 0.5}
+  technical:     {statistical: 0.5, stylistic: 0.7, structural: 0.3}
+  editorial-seo: {statistical: 0.9, stylistic: 1.0, structural: 1.0}
+
+verdict_bands:
+  LOW_RISK: [0, 24]
+  MEDIUM_RISK: [25, 49]
+  HIGH_RISK: [50, 74]
+  CRITICAL: [75, 100]
